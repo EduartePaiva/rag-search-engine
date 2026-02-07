@@ -21,8 +21,7 @@ def search_by_keyword(query: str) -> List[Movie]:
     query = query.lower()
 
     for movie in movies:
-        if movie["title"].lower().find(query):
-            print(movie)
+        if movie["title"].lower().find(query) != -1:
             result.append(movie)
             if len(result) == 5:
                 break
@@ -44,7 +43,9 @@ def main() -> None:
         case "search":
             print(f"Searching for: {args.query}")
             movies_found = search_by_keyword(args.query)
-            print(movies_found)
+
+            for i, m in enumerate(movies_found):
+                print(f"{i+1}. Movie {m['title']}")
             pass
         case _:
             parser.print_help()
