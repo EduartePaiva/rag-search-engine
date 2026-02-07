@@ -1,33 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-import json
-from typing import TypedDict, List
-
-
-class Movie(TypedDict):
-    id: int
-    title: str
-    description: str
-
-
-def search_by_keyword(query: str) -> List[Movie]:
-    result: List[Movie] = []
-
-    with open("./data/movies.json", "r", encoding="utf-8") as file:
-        json_movies = json.load(file)
-
-    movies: List[Movie] = json_movies["movies"]
-    query = query.lower()
-
-    for movie in movies:
-        if movie["title"].lower().find(query) != -1:
-            result.append(movie)
-            if len(result) == 5:
-                break
-
-    result.sort(key=lambda v: v["id"])
-    return result
+from lib.keyword_search import search_by_query
 
 
 def main() -> None:
@@ -42,10 +16,10 @@ def main() -> None:
     match args.command:
         case "search":
             print(f"Searching for: {args.query}")
-            movies_found = search_by_keyword(args.query)
+            movies_found = search_by_query(args.query, 5)
 
-            for i, m in enumerate(movies_found):
-                print(f"{i+1}. Movie {m['title']}")
+            for i, m in enumerate(movies_found, 1):
+                print(f"{i}. Movie {m['title']}")
             pass
         case _:
             parser.print_help()
