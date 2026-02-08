@@ -31,3 +31,9 @@ def clean_text(text: str) -> str:
     text = text.translate(str.maketrans("", "", string.punctuation))
 
     return text
+
+
+def tokenize_text(text: str) -> list[str]:
+    tokens = set(text.split(" "))
+
+    return list(tokens)
