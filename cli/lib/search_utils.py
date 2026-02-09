@@ -2,10 +2,18 @@ import json
 from typing import TypedDict, List
 from pathlib import Path
 import string
+from functools import lru_cache
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_PATH = PROJECT_ROOT / "data" / "movies.json"
+STOPWORDS_PATH = PROJECT_ROOT / "data" / "stopwords.txt"
+
+
+@lru_cache(maxsize=1)
+def get_stopwords() -> frozenset[str]:
+    with open(STOPWORDS_PATH, encoding="utf-8") as f:
+        return frozenset(f.read().splitlines())
 
 
 class Movie(TypedDict):
@@ -36,5 +44,13 @@ def clean_text(text: str) -> str:
 def tokenize_text(text: str) -> list[str]:
     text = clean_text(text)
     tokens = set(text.split(" "))
+    stopwords = get_stopwords()
 
-    return list(tokens)
+    return [t for t in tokens if t not in stopwords]
+
+
+def has_matching_token(query_tokens: list[str], title: str) -> bool:
+    for token in query_tokens:
+        if token in title:
+            return True
+    return False
