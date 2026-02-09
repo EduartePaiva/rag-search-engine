@@ -34,6 +34,7 @@ def clean_text(text: str) -> str:
 
 
 def tokenize_text(text: str) -> list[str]:
+    text = clean_text(text)
     tokens = set(text.split(" "))
 
     return list(tokens)
