@@ -3,11 +3,13 @@ from typing import TypedDict, List
 from pathlib import Path
 import string
 from functools import lru_cache
+from nltk.stem import PorterStemmer
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DATA_PATH = PROJECT_ROOT / "data" / "movies.json"
 STOPWORDS_PATH = PROJECT_ROOT / "data" / "stopwords.txt"
+STEAMER = PorterStemmer()
 
 
 @lru_cache(maxsize=1)
@@ -46,11 +48,12 @@ def tokenize_text(text: str) -> list[str]:
     tokens = set(text.split(" "))
     stopwords = get_stopwords()
 
-    return [t for t in tokens if t not in stopwords]
+    return [STEAMER.stem(t) for t in tokens if t not in stopwords]
 
 
-def has_matching_token(query_tokens: list[str], title: str) -> bool:
+def has_matching_token(query_tokens: list[str], title_tokens: list[str]) -> bool:
     for token in query_tokens:
-        if token in title:
-            return True
+        for title in title_tokens:
+            if token in title:
+                return True
     return False
