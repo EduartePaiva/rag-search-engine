@@ -49,11 +49,3 @@ def tokenize_text(text: str) -> list[str]:
     stopwords = get_stopwords()
 
     return [STEAMER.stem(t) for t in tokens if t not in stopwords]
-
-
-def has_matching_token(query_tokens: list[str], title_tokens: list[str]) -> bool:
-    for token in query_tokens:
-        for title in title_tokens:
-            if token in title:
-                return True
-    return False

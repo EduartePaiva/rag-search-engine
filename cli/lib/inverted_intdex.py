@@ -1,22 +1,26 @@
 from lib.search_utils import load_movies, Movie, tokenize_text, PROJECT_ROOT
 import pickle
 import os
+from collections import defaultdict
 
 
 class InvertedIndex:
-    index: dict[str, set[int]] = {}
-    docmap: dict[int, Movie] = {}
+    def __init__(self) -> None:
+        self.index: defaultdict[str, set[int]] = defaultdict(set)
+        self.docmap: dict[int, Movie] = {}
+        self.cache_path = PROJECT_ROOT / "cache"
+        self.index_path = self.cache_path / "index.pkl"
+        self.docmap_path = self.cache_path / "docmap.pkl"
 
     def __add_document(self, doc_id: int, text: str):
         text_tokens = tokenize_text(text)
 
         for token in text_tokens:
-            index_tk = self.index.get(token, set())
-            index_tk.add(doc_id)
-            self.index[token] = index_tk
+            self.index[token].add(doc_id)
 
     def get_documents(self, term: str):
-        term = tokenize_text(term)[0]
+        if len(self.docmap) == 0 or len(self.index) == 0:
+            self.load()
 
         return sorted(list(self.index[term]))
 
@@ -24,22 +28,23 @@ class InvertedIndex:
         print("building movies")
         movies = load_movies()
 
-        for i, m in enumerate(movies, 1):
-            self.docmap[i] = m
-            self.__add_document(i, f"{m['title']} {m['description']}")
+        for m in movies:
+            self.docmap[m["id"]] = m
+            self.__add_document(m["id"], f"{m['title']} {m['description']}")
+
+    def load(self):
+        with open(self.index_path, "rb") as f:
+            self.index = pickle.load(f)
+
+        with open(self.docmap_path, "rb") as f:
+            self.docmap = pickle.load(f)
 
     def save(self):
         print("saving inverted index")
-        os.makedirs(PROJECT_ROOT / "cache", exist_ok=True)
+        os.makedirs(self.cache_path, exist_ok=True)
 
-        with open(
-            PROJECT_ROOT / "cache" / "index.pkl",
-            "wb",
-        ) as docmap_file:
-            pickle.dump(self.index, docmap_file)
+        with open(self.index_path, "wb") as f:
+            pickle.dump(self.index, f)
 
-        with open(
-            PROJECT_ROOT / "cache" / "docmap.pkl",
-            "wb",
-        ) as docmap_file:
-            pickle.dump(self.docmap, docmap_file)
+        with open(self.docmap_path, "wb") as f:
+            pickle.dump(self.docmap, f)
