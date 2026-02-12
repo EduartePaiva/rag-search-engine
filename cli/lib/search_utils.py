@@ -43,6 +43,10 @@ def clean_text(text: str) -> str:
     return text
 
 
+def steam_words(words: list[str]) -> list[str]:
+    return [STEAMER.stem(w) for w in words]
+
+
 def tokenize_text(text: str) -> list[str]:
     text = clean_text(text)
     tokens = set(text.split(" "))

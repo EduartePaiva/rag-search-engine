@@ -1,7 +1,14 @@
-from lib.search_utils import load_movies, Movie, tokenize_text, PROJECT_ROOT
+from lib.search_utils import (
+    load_movies,
+    Movie,
+    tokenize_text,
+    PROJECT_ROOT,
+    clean_text,
+    steam_words,
+)
 import pickle
 import os
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 
 class InvertedIndex:
@@ -11,6 +18,8 @@ class InvertedIndex:
         self.cache_path = PROJECT_ROOT / "cache"
         self.index_path = self.cache_path / "index.pkl"
         self.docmap_path = self.cache_path / "docmap.pkl"
+        self.term_frequencies_path = self.cache_path / "term_frequencies.pkl"
+        self.term_frequencies: defaultdict[int, Counter[str]] = defaultdict(Counter)
 
     def __add_document(self, doc_id: int, text: str):
         text_tokens = tokenize_text(text)
@@ -18,11 +27,19 @@ class InvertedIndex:
         for token in text_tokens:
             self.index[token].add(doc_id)
 
+        self.term_frequencies[doc_id] = Counter(steam_words(clean_text(text).split()))
+
     def get_documents(self, term: str):
-        if len(self.docmap) == 0 or len(self.index) == 0:
-            self.load()
+        self.load()
 
         return sorted(list(self.index[term]))
+
+    def get_tf(self, doc_id: int, term: str):
+        self.load()
+        if not isinstance(term, str) or len(term.split()) > 1:
+            raise Exception("now allowed multiple term")
+
+        return self.term_frequencies[doc_id].get(term, 0)
 
     def build(self):
         print("building movies")
@@ -33,11 +50,21 @@ class InvertedIndex:
             self.__add_document(m["id"], f"{m['title']} {m['description']}")
 
     def load(self):
+        if (
+            len(self.docmap) > 0
+            and len(self.index) > 0
+            and len(self.term_frequencies) > 0
+        ):
+            return
+
         with open(self.index_path, "rb") as f:
             self.index = pickle.load(f)
 
         with open(self.docmap_path, "rb") as f:
             self.docmap = pickle.load(f)
+
+        with open(self.term_frequencies_path, "rb") as f:
+            self.term_frequencies = pickle.load(f)
 
     def save(self):
         print("saving inverted index")
@@ -48,3 +75,6 @@ class InvertedIndex:
 
         with open(self.docmap_path, "wb") as f:
             pickle.dump(self.docmap, f)
+
+        with open(self.term_frequencies_path, "wb") as f:
+            pickle.dump(self.term_frequencies, f)
