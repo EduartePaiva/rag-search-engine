@@ -9,6 +9,7 @@ from lib.search_utils import (
 import pickle
 import os
 from collections import defaultdict, Counter
+import math
 
 
 class InvertedIndex:
@@ -21,13 +22,25 @@ class InvertedIndex:
         self.term_frequencies_path = self.cache_path / "term_frequencies.pkl"
         self.term_frequencies: defaultdict[int, Counter[str]] = defaultdict(Counter)
 
+    def get_idf(self, term: str) -> float:
+        self.load()
+        if not isinstance(term, str) or len(term.split()) > 1:
+            raise ValueError("now allowed multiple term")
+        term = tokenize_text(term)[0]
+        total_doc_count = len(self.docmap)
+        term_match_doc_count = len(self.index[term])
+
+        idf = math.log((total_doc_count + 1) / (term_match_doc_count + 1))
+
+        return idf
+
     def __add_document(self, doc_id: int, text: str):
         text_tokens = tokenize_text(text)
 
-        for token in text_tokens:
+        for token in set(text_tokens):
             self.index[token].add(doc_id)
 
-        self.term_frequencies[doc_id] = Counter(steam_words(clean_text(text).split()))
+        self.term_frequencies[doc_id].update(steam_words(clean_text(text).split()))
 
     def get_documents(self, term: str):
         self.load()
@@ -37,7 +50,7 @@ class InvertedIndex:
     def get_tf(self, doc_id: int, term: str):
         self.load()
         if not isinstance(term, str) or len(term.split()) > 1:
-            raise Exception("now allowed multiple term")
+            raise ValueError("now allowed multiple term")
 
         return self.term_frequencies[doc_id].get(term, 0)
 

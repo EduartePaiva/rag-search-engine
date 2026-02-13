@@ -10,12 +10,15 @@ def main() -> None:
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
     subparsers.add_parser("build", help="Build and save inverted index")
 
-    term_frequency = subparsers.add_parser("tf", help="Search a term frequency")
-    term_frequency.add_argument("doc_id", type=int, help="document id to search")
-    term_frequency.add_argument("term", type=str, help="term to search")
+    tf = subparsers.add_parser("tf", help="Search a term frequency")
+    tf.add_argument("doc_id", type=int, help="document id to search")
+    tf.add_argument("term", type=str, help="term to search")
 
-    search_parser = subparsers.add_parser("search", help="Search movies using BM25")
-    search_parser.add_argument("query", type=str, help="Search query")
+    search = subparsers.add_parser("search", help="Search movies using BM25")
+    search.add_argument("query", type=str, help="Search query")
+
+    idf = subparsers.add_parser("idf", help="inverse document frequency")
+    idf.add_argument("term", type=str, help="term to search")
 
     args = parser.parse_args()
 
@@ -39,6 +42,12 @@ def main() -> None:
             term = tokenize_text(args.term)[0]
 
             print(inverted_index.get_tf(doc_id, term))
+            pass
+        case "idf":
+            inverted_index = InvertedIndex()
+            idf = inverted_index.get_idf(args.term)
+
+            print(f"Inverse document frequency of '{args.term}': {idf:.2f}")
             pass
 
         case _:
