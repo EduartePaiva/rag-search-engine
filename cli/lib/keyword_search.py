@@ -3,6 +3,7 @@ import os
 import pickle
 import string
 from collections import Counter, defaultdict
+from models.search_types import Movie
 
 from nltk.stem import PorterStemmer
 
@@ -16,8 +17,8 @@ from .search_utils import (
 
 class InvertedIndex:
     def __init__(self) -> None:
-        self.index = defaultdict(set)
-        self.docmap: dict[int, dict] = {}
+        self.index: defaultdict[str, set[int]] = defaultdict(set)
+        self.docmap: dict[int, Movie] = {}
         self.index_path = os.path.join(CACHE_DIR, "index.pkl")
         self.docmap_path = os.path.join(CACHE_DIR, "docmap.pkl")
         self.tf_path = os.path.join(CACHE_DIR, "term_frequencies.pkl")
@@ -78,6 +79,19 @@ class InvertedIndex:
         tf = self.get_tf(doc_id, term)
         idf = self.get_idf(term)
         return tf * idf
+
+    def get_bm25_idf(self, term: str) -> float:
+        tokens = tokenize_text(term)
+        if len(tokens) != 1:
+            raise ValueError("term must be a single token")
+
+        token = tokens[0]
+        N = len(self.docmap)
+        DF = len(self.index[token])
+
+        bm25_idf = math.log((N - DF + 0.5) / (DF + 0.5) + 1)
+
+        return bm25_idf
 
 
 def build_command() -> None:
@@ -147,3 +161,10 @@ def tfidf_command(doc_id: int, term: str) -> float:
     idx.load()
 
     return idx.get_tfidf(doc_id, term)
+
+
+def bm25_idf_command(term: str) -> float:
+    idx = InvertedIndex()
+    idx.load()
+
+    return idx.get_bm25_idf(term)
