@@ -10,6 +10,7 @@ from nltk.stem import PorterStemmer
 from .search_utils import (
     CACHE_DIR,
     DEFAULT_SEARCH_LIMIT,
+    BM25_K1,
     load_movies,
     load_stopwords,
 )
@@ -93,6 +94,11 @@ class InvertedIndex:
 
         return bm25_idf
 
+    def get_bm25_tf(self, doc_id: int, term: str, k1=BM25_K1) -> float:
+        tf = self.get_tf(doc_id, term)
+        bm25_tf = (tf * (k1 + 1)) / (tf + k1)
+        return bm25_tf
+
 
 def build_command() -> None:
     idx = InvertedIndex()
@@ -168,3 +174,10 @@ def bm25_idf_command(term: str) -> float:
     idx.load()
 
     return idx.get_bm25_idf(term)
+
+
+def bm25_tf_command(doc_id: int, term: str, k1=BM25_K1) -> float:
+    idx = InvertedIndex()
+    idx.load()
+
+    return idx.get_bm25_tf(doc_id, term, k1)
