@@ -118,6 +118,27 @@ class InvertedIndex:
         bm25_tf = (tf * (k1 + 1)) / (tf + k1 * length_norm)
         return bm25_tf
 
+    def bm25(self, doc_id: int, term: str) -> float:
+        bm25_tf = self.get_bm25_tf(doc_id, term)
+        bm25_idf = self.get_bm25_idf(term)
+
+        return bm25_idf * bm25_tf
+
+    def bm25_search(self, query: str, limit=DEFAULT_SEARCH_LIMIT):
+        tokens = tokenize_text(query)
+        scores: defaultdict[int, float] = defaultdict(int)
+
+        for doc in self.docmap.values():
+            for term in tokens:
+                bm25 = self.bm25(doc["id"], term)
+                scores[doc["id"]] += bm25
+
+        top_scores = [v for v in scores.items()]
+        top_scores.sort(key=lambda k: k[1], reverse=True)
+        top_scores = top_scores[0 : min(limit, len(top_scores))]
+
+        return top_scores
+
 
 def build_command() -> None:
     idx = InvertedIndex()
@@ -200,3 +221,14 @@ def bm25_tf_command(doc_id: int, term: str, k1=BM25_K1, b=BM25_B) -> float:
     idx.load()
 
     return idx.get_bm25_tf(doc_id, term, k1, b)
+
+
+def bm25search_command(
+    query: str, limit=DEFAULT_SEARCH_LIMIT
+) -> list[tuple[Movie, float]]:
+    idx = InvertedIndex()
+    idx.load()
+
+    search = idx.bm25_search(query, limit)
+
+    return [(idx.docmap[s[0]], s[1]) for s in search]
