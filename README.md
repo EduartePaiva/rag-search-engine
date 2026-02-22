@@ -8,3 +8,5 @@ mkdir -p data && curl -L https://storage.googleapis.com/qvault-webapp-dynamic-as
 
 4. activate venv  source .venv/bin/activate
 
+
+current at ch4 -> vector operations
