@@ -7,6 +7,22 @@ class SemanticSearch:
         model = SentenceTransformer("all-MiniLM-L6-v2")
         self.model = model
 
+    def generate_embedding(self, text: str):
+        if len(text.strip()) == 0:
+            raise ValueError("text should not be empty")
+
+        embeddings = self.model.encode([text])
+        return embeddings[0]
+
+
+def embed_text(text: str):
+    semantic_search = SemanticSearch()
+    embedding = semantic_search.generate_embedding(text)
+
+    print(f"Text: {text}")
+    print(f"First 3 dimensions: {embedding[:3]}")
+    print(f"Dimensions: {embedding.shape[0]}")
+
 
 def verify_model():
     semantic_search = SemanticSearch()
