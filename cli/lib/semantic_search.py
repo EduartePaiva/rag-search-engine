@@ -1,4 +1,8 @@
 from sentence_transformers import SentenceTransformer
+from models.search_types import Movie
+import numpy as np
+from search_utils import CACHE_DIR
+import os
 
 
 class SemanticSearch:
@@ -6,6 +10,10 @@ class SemanticSearch:
         # Load the model (downloads automatically the first time)
         model = SentenceTransformer("all-MiniLM-L6-v2")
         self.model = model
+        self.embbedings = None
+        self.documents: None | list[Movie] = None
+        self.document_map: dict[int, Movie] = {}
+        self.embbedings_path = os.path.join(CACHE_DIR, "movie_embeddings.npy")
 
     def generate_embedding(self, text: str):
         if len(text.strip()) == 0:
@@ -13,6 +21,30 @@ class SemanticSearch:
 
         embeddings = self.model.encode([text])
         return embeddings[0]
+
+    def load_or_create_embeddings(self, documents: list[Movie]):
+        self.documents = documents
+        movie_strings = []
+        for m in documents:
+            self.document_map[m["id"]] = m
+            movir_string = f"{m['title']}: {m['description']}"
+            movie_strings.append(movir_string)
+
+    def build_embeddings(self, documents: list[Movie]):
+        self.documents = documents
+        movie_strings = []
+        for m in documents:
+            self.document_map[m["id"]] = m
+            movir_string = f"{m['title']}: {m['description']}"
+            movie_strings.append(movir_string)
+
+        encoded_movies = self.model.encode(movie_strings, show_progress_bar=True)
+
+        self.embbedings = encoded_movies
+
+        np.save(self.embbedings_path, encoded_movies)
+
+        return encoded_movies
 
 
 def embed_text(text: str):
