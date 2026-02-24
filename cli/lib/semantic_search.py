@@ -1,7 +1,7 @@
 from sentence_transformers import SentenceTransformer
 from models.search_types import Movie
 import numpy as np
-from search_utils import CACHE_DIR
+from lib.search_utils import CACHE_DIR, load_movies
 import os
 
 
@@ -24,11 +24,16 @@ class SemanticSearch:
 
     def load_or_create_embeddings(self, documents: list[Movie]):
         self.documents = documents
-        movie_strings = []
         for m in documents:
             self.document_map[m["id"]] = m
-            movir_string = f"{m['title']}: {m['description']}"
-            movie_strings.append(movir_string)
+
+        if os.path.exists(self.embbedings_path):
+            embbedings = np.load(self.embbedings_path)
+            if len(embbedings) == len(documents):
+                self.embbedings = embbedings
+                return self.embbedings
+
+        return self.build_embeddings(documents)
 
     def build_embeddings(self, documents: list[Movie]):
         self.documents = documents
@@ -45,6 +50,18 @@ class SemanticSearch:
         np.save(self.embbedings_path, encoded_movies)
 
         return encoded_movies
+
+
+def verify_embeddings():
+    semantic_search = SemanticSearch()
+    movies = load_movies()
+
+    embeddings = semantic_search.load_or_create_embeddings(movies)
+
+    print(f"Number of docs:   {len(movies)}")
+    print(
+        f"Embeddings shape: {embeddings.shape[0]} vectors in {embeddings.shape[1]} dimensions"
+    )
 
 
 def embed_text(text: str):
