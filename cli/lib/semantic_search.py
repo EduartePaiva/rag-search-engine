@@ -15,7 +15,7 @@ class SemanticSearch:
         self.document_map: dict[int, Movie] = {}
         self.embbedings_path = os.path.join(CACHE_DIR, "movie_embeddings.npy")
 
-    def generate_embedding(self, text: str):
+    def generate_embedding(self, text: str) -> np.ndarray:
         if len(text.strip()) == 0:
             raise ValueError("text should not be empty")
 
@@ -50,6 +50,15 @@ class SemanticSearch:
         np.save(self.embbedings_path, encoded_movies)
 
         return encoded_movies
+
+
+def embed_query_text(query: str):
+    semantic_search = SemanticSearch()
+    embedding = semantic_search.generate_embedding(query)
+
+    print(f"Query: {query}")
+    print(f"First 5 dimensions: {embedding[:5]}")
+    print(f"Shape: {embedding.shape}")
 
 
 def verify_embeddings():
