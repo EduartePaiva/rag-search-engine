@@ -1,7 +1,7 @@
 from sentence_transformers import SentenceTransformer
 from models.search_types import Movie
 import numpy as np
-from lib.search_utils import CACHE_DIR, load_movies
+from lib.search_utils import CACHE_DIR, load_movies, cosine_similarity
 import os
 
 
@@ -10,10 +10,35 @@ class SemanticSearch:
         # Load the model (downloads automatically the first time)
         model = SentenceTransformer("all-MiniLM-L6-v2")
         self.model = model
-        self.embbedings = None
+        self.embbedings: None | np.ndarray = None
         self.documents: None | list[Movie] = None
         self.document_map: dict[int, Movie] = {}
         self.embbedings_path = os.path.join(CACHE_DIR, "movie_embeddings.npy")
+
+    def search(self, query: str, limit: int):
+        if self.embbedings is None or self.documents is None:
+            raise ValueError(
+                "No embeddings loaded. Call `load_or_create_embeddings` first."
+            )
+        query_embbeding = self.generate_embedding(query)
+
+        similarity: list[tuple[float, int]] = []
+
+        for i in range(len(self.embbedings)):
+            cosine = cosine_similarity(query_embbeding, self.embbedings[i])
+            similarity.append((cosine, i))
+
+        similarity.sort(reverse=True)
+        similarity = similarity[: min(len(similarity), limit)]
+
+        return [
+            {
+                "title": self.documents[idx]["title"],
+                "description": self.documents[idx]["description"],
+                "score": score,
+            }
+            for (score, idx) in similarity
+        ]
 
     def generate_embedding(self, text: str) -> np.ndarray:
         if len(text.strip()) == 0:
@@ -50,6 +75,19 @@ class SemanticSearch:
         np.save(self.embbedings_path, encoded_movies)
 
         return encoded_movies
+
+
+def search(query: str, limit=5):
+    semantic_search = SemanticSearch()
+    movies = load_movies()
+    semantic_search.load_or_create_embeddings(movies)
+
+    results = semantic_search.search(query, limit)
+
+    for i, movie in enumerate(results, 1):
+        print(
+            f"{i}. {movie['title']} (score: {movie['score']:.4f}) \n   {movie['description'][:min(len(movie['description']), 80)]}..."
+        )
 
 
 def embed_query_text(query: str):

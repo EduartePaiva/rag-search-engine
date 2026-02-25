@@ -7,6 +7,7 @@ from lib.semantic_search import (
     embed_text,
     verify_embeddings,
     embed_query_text,
+    search,
 )
 
 
@@ -19,6 +20,14 @@ def main():
 
     subparsers.add_parser(
         "verify_embeddings", help="Veryfy the embeddings for the movies"
+    )
+
+    search_parser = subparsers.add_parser(
+        "search", help="Do a semantic search in movies"
+    )
+    search_parser.add_argument("query", type=str, help="query to search")
+    search_parser.add_argument(
+        "limit", type=int, nargs="?", default=5, help="Search limit"
     )
     embedquery_parser = subparsers.add_parser(
         "embedquery", help="Embeds the provided query"
@@ -39,6 +48,8 @@ def main():
             verify_embeddings()
         case "embedquery":
             embed_query_text(args.query)
+        case "search":
+            search(args.query, args.limit)
         case _:
             parser.print_help()
 
