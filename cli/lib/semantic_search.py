@@ -90,6 +90,17 @@ def search(query: str, limit=5):
         )
 
 
+def chunk_text(text: str, chunk_size: int):
+    words = text.split()
+    chunks: list[str] = []
+
+    for i in range(0, len(words), chunk_size):
+        chunk = words[i : min(len(words), i + chunk_size)]
+        chunks.append(" ".join(chunk))
+
+    return chunks
+
+
 def embed_query_text(query: str):
     semantic_search = SemanticSearch()
     embedding = semantic_search.generate_embedding(query)
